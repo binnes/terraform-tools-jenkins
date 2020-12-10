@@ -11,7 +11,7 @@ spec:
               - name: wait-for-jenkins
                 image: docker.io/alpine:latest
                 imagePullPolicy: IfNotPresent
-                command: ["sh", "-c", "apk add curl; until curl -Isf ${JENKINS_URL}; do echo '>>> waiting for Jenkins'; sleep 90; done; echo '>>> Jenkins has started'"]
+                command: ["sh", "-c", "apk add curl; until curl -Isfk ${JENKINS_URL}/login; do echo '>>> waiting for Jenkins'; sleep 90; done; echo '>>> Jenkins has started'"]
                 env:
                 - name: JENKINS_URL
                   value: {{ printf "%s/login" (include "jenkins-config.url" .) }}
