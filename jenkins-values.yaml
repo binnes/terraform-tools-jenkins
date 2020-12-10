@@ -57,6 +57,7 @@ persistence:
   # ExistingClaim:
   ## jenkins data Persistent Volume Storage Class
   #storageClass: "ibmc-file-gold"
+  storageClass: "standard"
 
 rbac:
   create: true
