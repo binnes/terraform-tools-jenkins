@@ -11,7 +11,14 @@ spec:
               - name: wait-for-jenkins
                 image: docker.io/alpine:latest
                 imagePullPolicy: IfNotPresent
-                command: ["sh", "-c", "apk add curl; until curl -Isfk ${JENKINS_URL}; do echo '>>> waiting for Jenkins'; sleep 90; done; echo '>>> Jenkins has started'"]
+                command: ["sh", "-c"]
+                args:
+                  - apk add curl; 
+                    until curl -Iksf ${JENKINS_URL}; 
+                    do echo '>>> waiting for Jenkins'; 
+                    sleep 30; 
+                    done; 
+                    echo '>>> Jenkins has started'
                 env:
                 - name: JENKINS_URL
                   value: {{ printf "%s/login" (include "jenkins-config.url" .) }}
@@ -19,7 +26,17 @@ spec:
                 - name: jenkins-config
                   image: garagecatalyst/node11:latest
                   imagePullPolicy: IfNotPresent
-                  command: ["bash", "-c", "export NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace); npm i -g @garage-catalyst/ibm-garage-cloud-cli@0.2.20-puppeteer && echo $NAMESPACE && ~/.npm-packages/bin/igc jenkins-auth --inCluster -n ${NAMESPACE}"]
+                  volumeMounts:
+                    - name: certs
+                      mountPath: /tmp/certs
+                  command: ["bash", "-c"]
+                  args:
+                    - sudo apt-get install -y libnss3-tools;
+                      [ -d ~/.pki/nssdb ] || mkdir -p ~/.pki/nssdb;
+                      certutil -d sql:$HOME/.pki/nssdb -N --empty-password;
+                      certutil -d sql:$HOME/.pki/nssdb -A -n 'ingress cert authority' -i /tmp/certs/rootCA_crt.pem -t 'TCP,TCP,TCP';
+                      export NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace);
+                      npm i -g @garage-catalyst/ibm-garage-cloud-cli@0.2.20-puppeteer && echo $NAMESPACE && ~/.npm-packages/bin/igc jenkins-auth --inCluster -n ${NAMESPACE}
                   env:
                       - name: JENKINS_HOST
                         value: {{ .Values.jenkins.host | quote }}
@@ -35,6 +52,10 @@ spec:
                             secretKeyRef:
                                 name: jenkins
                                 key: jenkins-admin-password
+            volumes:
+            - name: certs
+              secret:
+                secretName: tls-ca          
             restartPolicy: Never
     backoffLimit: 4
 {{ end -}}
