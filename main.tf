@@ -22,7 +22,7 @@ resource "helm_release" "jenkins_iks" {
   count = var.cluster_type == "kubernetes" ? 1 : 0
 
   name         = "jenkins"
-  repository   = "https://kubernetes-charts.storage.googleapis.com/"
+  repository   = "https://charts.helm.sh/stable"
   chart        = "jenkins"
   version      = var.helm_version
   namespace    = var.tools_namespace
